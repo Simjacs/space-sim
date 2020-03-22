@@ -93,8 +93,9 @@ def incr_time(rt0, vt0, dt):
 
 # %%
 ## constants
-M = 2 * 10 ** 30  ##solar mass
-R = 1.496 * 10 ** 8  ## astronomical unit
+M = 2 * 10 ** 30 ##solar mass
+m = 6 * 10 ** 24 ## earth mass
+R = 1.496 * 10 ** 8 ## astronomical unit
 G = 6.67 * 10 ** (-11)
 V = 3 * 10 ** 4  ## earth avg orbital speed
 
@@ -118,10 +119,6 @@ for i in range(0, 200000):
 
     rt0 = r_i
     vt0 = v_i
-    #t += dt
-
-
-
     i += 1
 
 plotting_vals = np.array(r_vec)
