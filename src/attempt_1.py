@@ -51,59 +51,113 @@ r_hat = r/|r|
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import copy
 
-def v_derivs(r):
+
+def acceleration(r, m2):
     """
-    dv/dt only depends on position, not time
+    dv/dt depends on position and interacting mass, not time
+    :param r: vector between mass being considered and interacting mass
+    :param m2: size of interacting mass
     """
     r_hat = r / np.linalg.norm(r)
-    dvdt = -(G * M / np.linalg.norm(r)**2) * r_hat
+    dvdt = -(G * m2 / np.linalg.norm(r) ** 2) * r_hat
 
     return np.nan_to_num(dvdt)
 
+
 ## advance one timestep:
-def incr_time(rt0, vt0, dt):
+def runkut(rt0, vt0, dt, m):
     """
+    implement 4th order runge-kutta for position and velocity
     :param rt0: position vector at start of timestep
     :param vt0: velocity vector at start of timestep
     :param dt: length of timestep
     :return: position and velocity vector at t = t0 + dt
     """
-    vk1 = v_derivs(rt0)
+    vk1 = acceleration(rt0, m)
     rk1 = vt0
-    #print("k1", rk1, vk1)
+    # print("k1", rk1, vk1)
 
-    vk2 = v_derivs(rt0 + (vk1 * (dt / 2)))
+    #vk2 = acceleration(rt0 + (vk1 * (dt / 2)), m)
+    vk2 = acceleration(rt0 + (rk1 * (dt / 2)), m)
     rk2 = vt0 + vk1 * (dt / 2)
-    #print("k2", rk2, vk2)
+    # print("k2", rk2, vk2)
 
-    vk3 = v_derivs(rt0 + (vk2 * (dt / 2)))
+    vk3 = acceleration(rt0 + (rk2 * (dt / 2)), m)
     rk3 = vt0 + vk2 * (dt / 2)
-    #print("k3", rk3, vk3)
+    # print("k3", rk3, vk3)
 
-    vk4 = v_derivs(rt0 + (vk3 * dt))
+    vk4 = acceleration(rt0 + (rk3 * dt), m)
     rk4 = vt0 + vk3 * dt
-    #print("k4", rk4, vk4)
+    # print("k4", rk4, vk4)
 
     vdt = vt0 + (1 / 6) * (vk1 + 2 * vk2 + 2 * vk3 + vk4) * dt  # velocity at time t0 + dt
     rdt = rt0 + (1 / 6) * (rk1 + 2 * rk2 + 2 * rk3 + rk4) * dt  # position at time t0 + dt
 
-    #print("dt", rdt, vdt)
+    # print("dt", rdt, vdt)
     return rdt, vdt
+
 
 # %%
 ## constants
-M = 2 * 10 ** 30 ##solar mass
-m = 6 * 10 ** 24 ## earth mass
-R = 1.496 * 10 ** 8 ## astronomical unit
+M0 = 2 * 10 ** 30  ##solar mass
+m_e = 6 * 10 ** 24  ## earth mass
+R = 1.496 * 10 ** 8  ## astronomical unit
 G = 6.67 * 10 ** (-11)
 V = 3 * 10 ** 4  ## earth avg orbital speed
 
-## initial conditions
-r0 = np.array([R, 0, 0])
-v0 = np.array([0, -32*V, 0])
 
-dt = 0.01
+#mass_names = ["sun", "sun2", "earth"]
+#masses = [M0, 2*M0, m_e]
+mass_names = ["sun", "earth"]
+masses = [M0, m_e]
+n = len(masses)
+
+## starting condtions:
+#r0 = np.array([[-1*R, 0, 0], [1*R, 0, 0], [0, 5*R, 0]])
+#v0 = np.array([[0, -10*V, 0], [0, 10*V, 0], [-30*V, 0, 0]])
+r0 = np.array([[0, 0, 0], [R, 0, 0]])
+v0 = np.array([[0, 0, 0], [0, 32*V, 0]])
+
+
+dt = 1
+rt0 = copy.deepcopy(r0)
+vt0 = copy.deepcopy(v0)
+timesteps = 400
+
+r_data = np.zeros([timesteps + 1, n, 3])
+r_data[0] = r0
+for i in range(timesteps):  # number of timesteps
+    if i % 100 == 0:
+        print(i)
+    for m_i in range(n):    # n is number of masses
+        r_interactions = np.zeros((n, 3))   # 3 indicates dimensionality (3 spatial dims)
+        v_interactions = np.zeros((n, 3))
+        for m in range(n):
+            if m != m_i:
+                rt0[m] = rt0[m] - rt0[m_i]
+                r_i, v_i = runkut(rt0[m], vt0[m], dt, masses[m])
+                #print(r_i)   # , v_i)
+                r_interactions[m] = r_i
+                v_interactions[m] = v_i
+
+        rt0[m] = sum(r_interactions)
+        vt0[m] = sum(v_interactions)
+    r_data[i + 1] = rt0
+
+m1_x, m1_y = [r_data[i][0, 0] for i in range(timesteps)], [r_data[i][0, 1] for i in range(timesteps)]
+m2_x, m2_y = [r_data[i][1, 0] for i in range(timesteps)], [r_data[i][1, 1] for i in range(timesteps)]
+#m3_x, m3_y = [r_data[i][2, 0] for i in range(timesteps)], [r_data[i][2, 1] for i in range(timesteps)]
+
+plt.plot(m1_x, m1_y)
+plt.plot(m2_x, m2_y)
+plt.plot(m3_x, m3_y)
+
+
+
+"""
+dt = 1
 rt0 = r0
 vt0 = v0
 r_vec = []
@@ -127,5 +181,6 @@ x = plotting_vals[:, 0]
 y = plotting_vals[:, 1]
 ax = plt.subplot(1, 1, 1)
 ax.plot(x, y)
-ax.plot(0,0, "or")
+ax.plot(0, 0, "or")
 plt.show()
+"""
