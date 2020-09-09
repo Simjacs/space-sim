@@ -77,25 +77,19 @@ def runkut(rt0, vt0, dt, m):
     """
     vk1 = acceleration(rt0, m)
     rk1 = vt0
-    # print("k1", rk1, vk1)
 
-    #vk2 = acceleration(rt0 + (vk1 * (dt / 2)), m)
     vk2 = acceleration(rt0 + (rk1 * (dt / 2)), m)
     rk2 = vt0 + vk1 * (dt / 2)
-    # print("k2", rk2, vk2)
 
     vk3 = acceleration(rt0 + (rk2 * (dt / 2)), m)
     rk3 = vt0 + vk2 * (dt / 2)
-    # print("k3", rk3, vk3)
 
     vk4 = acceleration(rt0 + (rk3 * dt), m)
     rk4 = vt0 + vk3 * dt
-    # print("k4", rk4, vk4)
 
     vdt = vt0 + (1 / 6) * (vk1 + 2 * vk2 + 2 * vk3 + vk4) * dt  # velocity at time t0 + dt
     rdt = rt0 + (1 / 6) * (rk1 + 2 * rk2 + 2 * rk3 + rk4) * dt  # position at time t0 + dt
 
-    # print("dt", rdt, vdt)
     return rdt, vdt
 
 
@@ -105,8 +99,11 @@ M0 = 2 * 10 ** 30  ##solar mass
 m_e = 6 * 10 ** 24  ## earth mass
 R = 1.496 * 10 ** 8  ## astronomical unit
 G = 6.67 * 10 ** (-11)
-V = 3 * 10 ** 4  ## earth avg orbital speed
-
+V = 2.978 * 10 ** 4  ## earth avg orbital speed
+R_peri = 0.98329 * R
+V_peri = 3.029 * 10 ** 4
+R_aphe = 1.01671 * R
+V_aphe = 2.929 * 10 ** 4
 
 #mass_names = ["sun", "sun2", "earth"]
 #masses = [M0, 2*M0, m_e]
@@ -119,28 +116,33 @@ n = len(masses)
 #v0 = np.array([[0, -10*V, 0], [0, 10*V, 0], [-30*V, 0, 0]])
 r0 = np.array([[0, 0, 0], [R, 0, 0]])
 v0 = np.array([[0, 0, 0], [0, 32*V, 0]])
+r0_peri = np.array([[0, 0, 0], [R_peri, 0, 0]])
+v0_peri = np.array([[0, 0, 0], [0, V_peri, 0]])
 
-
-dt = 1
-rt0 = copy.deepcopy(r0)
-vt0 = copy.deepcopy(v0)
+dt = 0.0001
+rt0 = copy.deepcopy(r0_peri)
+vt0 = copy.deepcopy(v0_peri)
 timesteps = 400
 
 r_data = np.zeros([timesteps + 1, n, 3])
 r_data[0] = r0
 for i in range(timesteps):  # number of timesteps
-    if i % 100 == 0:
-        print(i)
     for m_i in range(n):    # n is number of masses
         r_interactions = np.zeros((n, 3))   # 3 indicates dimensionality (3 spatial dims)
         v_interactions = np.zeros((n, 3))
         for m in range(n):
             if m != m_i:
-                rt0[m] = rt0[m] - rt0[m_i]
-                r_i, v_i = runkut(rt0[m], vt0[m], dt, masses[m])
+                dist = rt0[m] - rt0[m_i]
+                delta_r_i, v_i = runkut(dist, vt0[m], dt, masses[m])
                 #print(r_i)   # , v_i)
-                r_interactions[m] = r_i
+                r_interactions[m] = rt0[m] + delta_r_i
                 v_interactions[m] = v_i
+
+                if i % 100 == 0:
+                    print(i, m_i, m)
+                    print("r0", rt0[m])
+                    print("r:", r_interactions[m])
+                    print("v:", v_interactions[m])
 
         rt0[m] = sum(r_interactions)
         vt0[m] = sum(v_interactions)
@@ -150,9 +152,11 @@ m1_x, m1_y = [r_data[i][0, 0] for i in range(timesteps)], [r_data[i][0, 1] for i
 m2_x, m2_y = [r_data[i][1, 0] for i in range(timesteps)], [r_data[i][1, 1] for i in range(timesteps)]
 #m3_x, m3_y = [r_data[i][2, 0] for i in range(timesteps)], [r_data[i][2, 1] for i in range(timesteps)]
 
-plt.plot(m1_x, m1_y)
-plt.plot(m2_x, m2_y)
-plt.plot(m3_x, m3_y)
+fig = plt.figure()
+plt.plot(m1_x, m1_y, markersize=10)
+plt.plot(m2_x, m2_y, markersize=2)
+fig.savefig(f"orbit_dt_{dt}_steps_{timesteps}.png")
+#plt.plot(m3_x, m3_y)
 
 
 
