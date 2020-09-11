@@ -66,8 +66,75 @@ def acceleration(r, m2):
     return np.nan_to_num(dvdt)
 
 
+def sum_acceleration(distances, masses):
+    """
+    calculate total dv/dt for a body interacting with one or more masses
+    :param distances: array of vector distances of the interacting masses from the test mass
+    :param masses: array of values for the masses
+    :return: total acceleration body is under
+    """
+    if len(distances) != len(masses):
+        print("number of coordinates does not match number of masses")
+        raise ValueError
+
+    n = len(distances)
+    dvdt_array = np.zeros((n, 3))
+
+    for mass in range(n):
+        r = distances[mass]
+        m = masses[mass]
+        r_hat = r / np.linalg.norm(r)
+        dvdt = - (G * m / np.linalg.norm(r) ** 2) * r_hat
+        dvdt_array[mass] = dvdt
+
+    return sum(dvdt_array)
+
+
+def transform_values(position_array, velocity_array, mass_index):
+    """
+    change positions to distances from test mass
+    and remove values for test mass from position and velocity arrays
+    :param position_array: array of vector positions for each mass in the system
+    :param velocity_array: array of vector velocities for each mass in the system
+    :param mass_index: index of mass currently being considered as test mass
+    :return: vector distances from test mass, vector velocities of masses other than test mass
+    """
+    mass_position = position_array[mass_index]
+    distances = np.delete(position_array, mass_index, 0)
+    distances = mass_position - distances
+    velocities = np.delete(velocity_array, mass_index, 0)
+
+    return distances, velocities
+
+
 ## advance one timestep:
 def runkut(rt0, vt0, dt, m):
+    """
+    implement 4th order runge-kutta for position and velocity
+    :param rt0: position vector at start of timestep
+    :param vt0: velocity vector at start of timestep
+    :param dt: length of timestep
+    :return: position and velocity vector at t = t0 + dt
+    """
+    vk1 = sum_acceleration(rt0, m)
+    rk1 = vt0
+
+    vk2 = sum_acceleration(rt0 + (rk1 * (dt / 2)), m)
+    rk2 = vt0 + vk1 * (dt / 2)
+
+    vk3 = sum_acceleration(rt0 + (rk2 * (dt / 2)), m)
+    rk3 = vt0 + vk2 * (dt / 2)
+
+    vk4 = sum_acceleration(rt0 + (rk3 * dt), m)
+    rk4 = vt0 + vk3 * dt
+
+    vdt = vt0 + (1 / 6) * (vk1 + 2 * vk2 + 2 * vk3 + vk4) * dt  # velocity at time t0 + dt
+    rdt = rt0 + (1 / 6) * (rk1 + 2 * rk2 + 2 * rk3 + rk4) * dt  # position at time t0 + dt
+
+    return rdt, vdt
+
+
+def vector_runkut(rt0, vt0, dt, m):
     """
     implement 4th order runge-kutta for position and velocity
     :param rt0: position vector at start of timestep
@@ -91,7 +158,6 @@ def runkut(rt0, vt0, dt, m):
     rdt = rt0 + (1 / 6) * (rk1 + 2 * rk2 + 2 * rk3 + rk4) * dt  # position at time t0 + dt
 
     return rdt, vdt
-
 
 # %%
 ## constants
@@ -124,29 +190,31 @@ rt0 = copy.deepcopy(r0_peri)
 vt0 = copy.deepcopy(v0_peri)
 timesteps = 400
 
+rdt = np.zeros((n, 3))
+vdt = np.zeros((n, 3))
+
 r_data = np.zeros([timesteps + 1, n, 3])
 r_data[0] = r0
+
 for i in range(timesteps):  # number of timesteps
+    ## at each timestep, calculate the total force acting upon each body
+    r_interactions = np.zeros((n, 3))
+    v_interactions = np.zeros((n, 3))
     for m_i in range(n):    # n is number of masses
-        r_interactions = np.zeros((n, 3))   # 3 indicates dimensionality (3 spatial dims)
-        v_interactions = np.zeros((n, 3))
-        for m in range(n):
-            if m != m_i:
-                dist = rt0[m] - rt0[m_i]
-                delta_r_i, v_i = runkut(dist, vt0[m], dt, masses[m])
-                #print(r_i)   # , v_i)
-                r_interactions[m] = rt0[m] + delta_r_i
-                v_interactions[m] = v_i
+        mass = masses[m_i]
+        dists, vels = transform_values(position_array=rt0, velocity_array=vt0, mass_index=m_i)
+        rdt, vdt = runkut(dists, vels, dt, mass)
 
-                if i % 100 == 0:
-                    print(i, m_i, m)
-                    print("r0", rt0[m])
-                    print("r:", r_interactions[m])
-                    print("v:", v_interactions[m])
+    rt0 = rdt
+    vt0 = vdt
 
-        rt0[m] = sum(r_interactions)
-        vt0[m] = sum(v_interactions)
+
+
+
+
+
     r_data[i + 1] = rt0
+print(r_data)
 
 m1_x, m1_y = [r_data[i][0, 0] for i in range(timesteps)], [r_data[i][0, 1] for i in range(timesteps)]
 m2_x, m2_y = [r_data[i][1, 0] for i in range(timesteps)], [r_data[i][1, 1] for i in range(timesteps)]
@@ -154,10 +222,11 @@ m2_x, m2_y = [r_data[i][1, 0] for i in range(timesteps)], [r_data[i][1, 1] for i
 
 fig = plt.figure()
 plt.plot(m1_x, m1_y, markersize=10)
-plt.plot(m2_x, m2_y, markersize=2)
-fig.savefig(f"orbit_dt_{dt}_steps_{timesteps}.png")
+fig.savefig(f"orbit_dt_{dt}_steps_{timesteps}_mass1.png")
 #plt.plot(m3_x, m3_y)
-
+fig = plt.figure()
+plt.plot(m2_x, m2_y, markersize=2)
+fig.savefig(f"obrit_dt_{dt}_steps_{timesteps}_mass2.png")
 
 
 """
