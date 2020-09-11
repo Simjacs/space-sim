@@ -5,6 +5,7 @@ Created on Mon Feb 24 13:33:12 2020
 
 @author: simran
 """
+from typing import List, Any, Union
 
 """
 runge-kutta algorithm:
@@ -161,6 +162,7 @@ def vector_runkut(r_0, v_0, delta_t, m):
 ## constants
 M0 = 2 * 10 ** 30  ##solar mass
 m_e = 6 * 10 ** 24  ## earth mass
+R0 = 6.957 * 10 ** 8 ## solar radius
 R = 1.496 * 10 ** 8  ## astronomical unit
 G = 6.67 * 10 ** (-11)
 V = 2.978 * 10 ** 4  ## earth avg orbital speed
@@ -183,10 +185,10 @@ v0 = np.array([[0, 0, 0], [0, 32 * V, 0]])
 r0_peri = np.array([[0, 0, 0], [R_peri, 0, 0]])
 v0_peri = np.array([[0, 0, 0], [0, V_peri, 0]])
 
-dt = 0.0001
+dt = 0.01
 rt0 = copy.deepcopy(r0_peri)
 vt0 = copy.deepcopy(v0_peri)
-timesteps = 500
+timesteps = 5000
 
 rdt = np.zeros((n, 3))
 vdt = np.zeros((n, 3))
@@ -200,22 +202,22 @@ for i in range(timesteps):  # number of timesteps
     r_interactions = np.zeros((n, 3))
     v_interactions = np.zeros((n, 3))
     for m_i in range(n):  # n is number of masses
-        mass = mass_values[m_i]
-        dists, vels, masses = transform_values(
-            position_array=rt0, velocity_array=vt0,
-            mass_array=mass_values, mass_index=m_i)
+        dists, vels, masses = transform_values(position_array=rt0, velocity_array=vt0, mass_array=mass_values, mass_index=m_i)
 
         ## dil mein mere hai
         delta_distances, vdt = vector_runkut(r_0=dists, v_0=vels, delta_t=dt, m=masses)
-        r_interactions[m_i] = rt0[m_i] + (dists - delta_distances)
+        r_interactions[m_i] = rt0[m_i] + (delta_distances - dists)
         v_interactions[m_i] = vdt
 
     rt0 = r_interactions
     vt0 = v_interactions
 
-    if i % 10 == 0:
+    if i % 100 == 0:
         print(i)
-        print(rt0, vt0)
+        print("r")
+        print(rt0)
+        print("v")
+        print(vt0)
 
     r_data[i + 1] = rt0
 
@@ -224,12 +226,13 @@ m2_x, m2_y = [r_data[i][1, 0] for i in range(timesteps)], [r_data[i][1, 1] for i
 # m3_x, m3_y = [r_data[i][2, 0] for i in range(timesteps)], [r_data[i][2, 1] for i in range(timesteps)]
 
 fig = plt.figure()
-plt.plot(m1_x, m1_y, markersize=10)
-#fig.savefig(f"orbit_dt_{dt}_steps_{timesteps}_mass1.png")
-#fig = plt.figure()
-plt.plot(m2_x, m2_y, markersize=2)
-#fig.savefig(f"obrit_dt_{dt}_steps_{timesteps}_mass2.png")
-fig.savefig(f"orbit_dt_{dt}_steps_{timesteps}.png")
+plt.plot(m1_x, m1_y, "r", markersize=10)
+fig.savefig(f"orbit_dt_{dt}_steps_{timesteps}_mass1.png")
+
+fig = plt.figure()
+plt.plot(m2_x, m2_y, "b", markersize=10)
+fig.savefig(f"obrit_dt_{dt}_steps_{timesteps}_mass2.png")
+#fig.savefig(f"orbit_dt_{dt}_steps_{timesteps}.png")
 
 """
 dt = 1
