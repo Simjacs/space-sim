@@ -1,0 +1,59 @@
+object is initialised with mass, position, velocity, acceleration
+acceleration, a = F/m
+also, a = dv/dt
+=> velocity is the integral of the acceleration dt
+
+v = dr/dt
+=> position is the integral of the velocity dt
+
+r(t) = r(t-1) + v(t-1)
+
+v(t) = v(t-1) + a(t-1)
+
+this approximation works for sufficiently small timesteps
+
+F = GMm/r**2
+=> a = GM/r**2
+where M is the mass of the attracting body and r is the distance from it
+
+*****************************
+Runge-Kutta algorithm:
+    definition:
+    approximate a function x(t) given x(t0) = x0 and dx/dt = f(x,t)
+    y[n+1] = y[n] + (1/6) * h * (k1 + k2 + k3 + k4)
+    t[n+1] = t[n] + h
+    where h is the length of timestep
+
+        definition of the constants k[1-4]:
+        here x, t are x[n], t[n]
+        k1 = f(x, t)
+        k2 = f(x + h * (k1/2), t + (h/2))
+        k3 = f(x + h * (k2/2), t + (h/2))
+        k4 = f(x + h * k3, t + h)
+
+        given f(x,t) = GM/x**2:
+        f(x, t) = f(x)
+        :. k1 = f(x),
+           k2 = f(x + h * (k1/2)) etc
+
+
+wish to approximate r(t) and have r(t0) = r0 however do not have dr/dt
+dr/dt = v .: need to also approximate v(t)
+
+have r(t0) = r0 and dv/dt = f(r, t)
+
+r(t+1) = r(t) + v(t)
+v(t) = v(t-1) + a(t-1)
+:. r(t+1) = r(t) + v(t-1) + a(t-1)
+=>  r(t=3) = r(t=2) + v(t=1) + a(t=1)
+           = r(t=2) + (v(t=0) + a(t=0)) + a(t=1)
+
+**********************
+velocity and position:
+v = dr/dt
+=> position is the integral of the velocity
+:. approximately:
+r(t + dt) = r(t) + (v(t) * dt)
+v(t + dt) = v(t) + (a(t) * dt)
+=> r(t + dt) = r(t) + (v(t-dt) + a(t-dt) * dt) * dt
+             = r(t) + dt * v(t-dt) + dt**2 * a(t-dt)
