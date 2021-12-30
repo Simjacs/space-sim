@@ -1,3 +1,6 @@
+import numpy as np
+
+
 def grav_acc(r, M=None):
     G = 6.67408 * 10**(-11)
     if M is None:
@@ -5,7 +8,7 @@ def grav_acc(r, M=None):
     return (G * M) / (r ** 2)
 
 
-def runkut_step(r0, v0, M, h) -> list:
+def runkut_step(r0, v0, M, h) -> np.array:
     vk1 = grav_acc(r0, M)
     rk1 = v0
 
@@ -21,7 +24,7 @@ def runkut_step(r0, v0, M, h) -> list:
     v1 = (1/6) * h * (vk1 + vk2 + vk3 + vk4)
     r1 = (1/6) * h * (rk1 + rk2 + rk3 + rk4)
 
-    return r1, v1
+    return np.array([r1, v1])
 
 
 """
