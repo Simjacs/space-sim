@@ -57,3 +57,9 @@ r(t + dt) = r(t) + (v(t) * dt)
 v(t + dt) = v(t) + (a(t) * dt)
 => r(t + dt) = r(t) + (v(t-dt) + a(t-dt) * dt) * dt
              = r(t) + dt * v(t-dt) + dt**2 * a(t-dt)
+
+
+**********************************
+co-ordinates:
+distance between a=(x1, y1) and b=(x2, y2)
+    sqrt((x2-x1)**2 + (y2-y1)**2)
