@@ -14,6 +14,7 @@ def resolve_relative_path(file: str, path: str, parent_levels=0) -> pathlib.Path
 
 
 def calculate_distance(a: tuple, b: tuple) -> float:
+    """ returns magnitude of distance between a and b"""
     x1 = a[0]
     x2 = b[0]
     y1 = a[1]

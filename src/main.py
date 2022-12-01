@@ -8,7 +8,7 @@ M_0 = 1.989 * 10**30
 astronomical_unit = 1.496 * 10**11
 v0 = 3.0 * 10**4
 G = 6.67408 * 10**(-11)
-step = 1.0
+step = 1
 mass_coords = (0.0, 0.0)
 
 # starting conditions, x-y plane
@@ -19,7 +19,7 @@ vx0 = v0
 vy0 = 0.0
 
 r0 = calculate_distance((x0, y0), mass_coords)
-print(r0)
+print("r0:", r0)
 # starting conditions
 x_starting_conds = np.array([x0, vx0])
 y_starting_conds = np.array([y0, vy0])
@@ -47,15 +47,23 @@ x_conds = np.array([x0, vx0])
 y_conds = np.array([y0, vy0])
 x_list = []
 y_list = []
-for i in range(5000):
-    print(i)
+
+year_seconds = 365 * 24 * 3600
+range_value = round(0.25 * year_seconds / step)
+print("range_value:", range_value)
+for i in range(range_value):
+    if i % 1000 == 0:
+        print("i =", i, "out of:", range_value)
     r1 = calculate_distance((x_conds[0], y_conds[0]), mass_coords)
+    # print("r1:", r1)
     x_change = runkut_step(r1, x_conds[1], M=M_0, h=step)
     y_change = runkut_step(r1, y_conds[1], M=M_0, h=step)
     x_conds += x_change
     y_conds += y_change
-    print(f"x{i}:", x_conds)
-    print(f"y{i}:", y_conds)
+    if i > range_value - 4:
+        print(i)
+        print(f"x{i}:", x_conds)
+        print(f"y{i}:", y_conds)
     x_list.append(x_conds[0])
     y_list.append(y_conds[0])
 

@@ -9,6 +9,7 @@ def grav_acc(r, M=None):
 
 
 def runkut_step(r0, v0, M, h) -> np.array:
+    # r_magnitude =
     vk1 = grav_acc(r0, M)
     rk1 = v0
 
@@ -26,6 +27,7 @@ def runkut_step(r0, v0, M, h) -> np.array:
 
     return np.array([r1, v1])
 
+# TODO: direction AND magnitude
 
 """
     k1 = f(x, t)
